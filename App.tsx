@@ -19,20 +19,27 @@ export default function App() {
 
   const [druhy, setDruhy] = useState<string[]>([]);
   const [geny, setGeny] = useState<string[]>([]);
+
   useEffect(() => {
     // Načíst druhy
-    fetch('http://127.0.0.1:3000/druhy')
+    fetch('https://plaz-api-3j5b.onrender.com/druhy') // Správný endpoint pro druhy
       .then(res => res.json())
       .then(data => setDruhy(data))
       .catch(err => console.error('Chyba při načítání druhů:', err));
-  
+
     // Načíst geny
-    fetch('http://127.0.0.1:3000/geny')
+    fetch('https://plaz-api-3j5b.onrender.com/geny') // Správný endpoint pro geny
       .then(res => res.json())
       .then(data => setGeny(data))
       .catch(err => console.error('Chyba při načítání genů:', err));
+
+    // Načíst plazi
+    fetch('https://plaz-api-3j5b.onrender.com/plazi') // Správný endpoint pro plazi
+      .then(res => res.json())
+      .then(data => setPlazi(data))
+      .catch(err => console.error('Chyba při načítání plazů:', err));
   }, []);
-  
+
   const [filteredDruhy, setFilteredDruhy] = useState(druhy);
   const [filteredGeny, setFilteredGeny] = useState(geny);
 
@@ -60,22 +67,38 @@ export default function App() {
       return;
     }
 
-    if (editovanyPlazId) {
-      setPlazi(plazi.map((plaz) => plaz.id === editovanyPlazId ? { ...plaz, ...novyPlaz, genetika: addedGeny } : plaz));
-    } else {
-      const novy: Plaz = {
-        id: Date.now().toString(),
-        jmeno: novyPlaz.jmeno || '',
-        druh: novyPlaz.druh || '',
-        narozeni: novyPlaz.narozeni || '',
-        genetika: addedGeny,
-        pohlavi: novyPlaz.pohlavi || 'Neznámé',
-        poznamky: novyPlaz.poznamky || '',
-      };
-      setPlazi([novy, ...plazi]);
-    }
+    const plazData = {
+      ...novyPlaz,
+      genetika: addedGeny,
+    };
 
-    setModalVisible(false);
+    if (editovanyPlazId) {
+      // Odeslat PUT pro úpravu existujícího plaza
+      fetch(`https://plaz-api-3j5b.onrender.com/plazi/${editovanyPlazId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(plazData),
+      })
+        .then((res) => res.json())
+        .then((updatedPlaz) => {
+          setPlazi(plazi.map((plaz) => (plaz.id === editovanyPlazId ? updatedPlaz : plaz)));
+          setModalVisible(false);
+        })
+        .catch((err) => console.error('Chyba při úpravě plaza:', err));
+    } else {
+      // Odeslat POST pro přidání nového plaza
+      fetch('https://plaz-api-3j5b.onrender.com/plazi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(plazData),
+      })
+        .then((res) => res.json())
+        .then((novy) => {
+          setPlazi([novy, ...plazi]);
+          setModalVisible(false);
+        })
+        .catch((err) => console.error('Chyba při přidávání plaza:', err));
+    }
   };
 
   const smazatPlaze = (id: string) => {
@@ -91,7 +114,13 @@ export default function App() {
           text: 'Smazat',
           style: 'destructive',
           onPress: () => {
-            setPlazi(plazi.filter((plaz) => plaz.id !== id));
+            fetch(`https://plaz-api-3j5b.onrender.com/plazi/${id}`, {
+              method: 'DELETE',
+            })
+              .then(() => {
+                setPlazi(plazi.filter((plaz) => plaz.id !== id));
+              })
+              .catch((err) => console.error('Chyba při mazání plaza:', err));
           },
         },
       ]
@@ -245,108 +274,3 @@ export default function App() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-    paddingTop: 50,
-    paddingHorizontal: 20,
-  },
-  nadpis: {
-    color: '#fff',
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    alignSelf: 'center',
-  },
-  button: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  zvire: {
-    marginBottom: 20,
-    padding: 15,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 10,
-  },
-  jmeno: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  druh: {
-    color: '#aaa',
-    fontSize: 16,
-  },
-  dalsiInfo: {
-    color: '#777',
-    marginTop: 5,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: '#1a1a1a',
-    padding: 20,
-    borderRadius: 10,
-  },
-  input: {
-    backgroundColor: '#333',
-    color: '#fff',
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 10,
-  },
-  suggestion: {
-    color: '#fff',
-    padding: 5,
-  },
-  genyBubliny: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 10,
-  },
-  bublina: {
-    backgroundColor: '#4CAF50',
-    padding: 5,
-    borderRadius: 15,
-    margin: 5,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  bublinaText: {
-    color: '#fff',
-    marginRight: 5,
-  },
-  smazatText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
-  modalButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  modalButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-});
