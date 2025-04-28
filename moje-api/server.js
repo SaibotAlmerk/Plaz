@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000; // ✅ PORT ze systémových proměnných
 
 app.use(express.json());
 
@@ -66,7 +66,6 @@ app.get('/geny', (req, res) => {
 });
 
 // Spuštění serveru
-app.listen(3000, '127.0.0.1', () => {
-    console.log('Server běží na http://127.0.0.1:3000');
-  });
-  
+app.listen(PORT, () => {
+  console.log(`Server běží na portu ${PORT}`);
+});
