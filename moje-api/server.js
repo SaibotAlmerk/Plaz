@@ -1,7 +1,10 @@
 const express = require('express');
-const app = express();
-const PORT = process.env.PORT || 3000; // ✅ PORT ze systémových proměnných
+const cors = require('cors'); // ✅ přidáno
 
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors()); // ✅ přidáno
 app.use(express.json());
 
 // Mock data - začátek
